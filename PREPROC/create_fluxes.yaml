@@ -1,0 +1,59 @@
+# input arguments to create_fluxes.py
+
+meshmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/meshmask_025_z125.nc'
+bounmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/bounmask.nc'
+outdir: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/FLUXES/'
+# output file names are defined in create_fluxes.py, e.g. Fluxes_600m.nc for a depth_level at 600 m.
+# All the control surfaces accept an optional 'name', appended to their default file name 
+# (Fluxes_600m_<name>.nc): use it to save several surfaces of the same type,
+# e.g. two depth_level at the same depth. Two surfaces cannot have the same file name.
+
+# all the grid points west of lon_cut [deg E] are excluded from all the control surfaces 
+# and from Fluxes.nc (e.g. the Atlantic buffer of the domain). null: no cut.
+lon_cut: -5.4
+
+# Control Surfaces Types / description / (arguments):
+# - depth_level / a horizontal surface at a fixed z / (depth)
+# - sea_bed / the seabed / (-)
+# - isobath / a vertical surface along an isobath / (depth, plot_isobath)
+# - zonal_transect / a zonal transect at a fixed lat / (lat, lon_start, lon_end)
+# - meridional_transect / a meridional transect at a fixed lon / (lon, lat_start, lat_end)
+# - arbitrary_transect / a transect along a polyline through arbitrary points, 
+#                        fluxes are positive from left to right looking from the first to the last point
+#                        / (points: list of [lon, lat], plot_transect)
+
+Control_Surfaces:
+  CS00:
+    type: 'depth_level'
+    name: '600m'
+    depth: 600.0
+  CS01:
+    type: 'sea_bed'
+    name: ''
+  CS02:
+    type: 'isobath'
+    name: '200m'
+    depth: 200.0
+    plot_isobath: True
+  CS03:
+    type: 'zonal_transect'
+    name: 'test'
+    lat: 38.0
+    lon_start: 0.0
+    lon_end: 10.0
+  CS04:
+    type: 'meridional_transect'
+    name: 'test'
+    lon: 18.0
+    lat_start: 33.0
+    lat_end: 41.0
+  CS05:
+    type: 'arbitrary_transect'
+    name: 'cretan_arc'
+    plot_transect: True # default True, saves arbitrary-transect_<name>.png
+    points:
+      - [22.23, 37.38]
+      - [23.73, 35.38]
+      - [26.5, 35.13]
+      - [27.98, 37.38]
+

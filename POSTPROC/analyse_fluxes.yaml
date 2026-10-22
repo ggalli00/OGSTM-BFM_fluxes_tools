@@ -1,0 +1,77 @@
+# run input
+indir: '/g100_scratch/userexternal/ggalli00/EIS_2026_11/__TEST_NAME__/wrkdir/MODEL/FLUXES/'
+test_name: 'flx03'
+fname: 'flux.*.nc'
+
+# time average of the fluxes: period [period_start, period_end], format YYYYMMDD-HH:MM:SS
+# (null: all the available files). The output frequency of the model files can be anything.
+period_start: '20240101-00:00:00'
+period_end: '20250101-00:00:00'
+days_per_year: 365.0 # to convert [mg s-1] to [kg y-1]
+
+# model input
+flxdir: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/FLUXES/' 
+bounmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/bounmask.nc'
+meshnmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/meshmask_025_z125.nc'
+
+# output
+outdir: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/PLOTS/'
+outfile: 'fluxMap___VNAME_____FLXSURF_____TESTNAME__.png'
+
+# time interval to plot
+year_list: ['2024']
+month_list: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+# general parameters for maps
+CMIN: -100.0
+CMAX: 100.0
+CSTEP: 12.5
+
+LAYOUT:
+  figwidth: 13.0
+  figheight: 7.4
+  lbwh:
+    - [0.3, 1.2, 12.3, 5.2]
+  lbwh_cbar: [0.3, 0.6, 12.3, 0.4]
+
+# Flux Types:
+# - 'Zonal_advection': 0,
+# - 'Meridional_advection': 1,
+# - 'Vertical_advection': 2,
+# - 'Gravitational_settling': 3,
+# - 'Horizontal_diffusion_x': 4,
+# - 'Horizontal_diffusion_y': 5,
+# - 'Vertical_diffusion': 6,
+# - 'Bottom_burial': 7,
+
+FLUXES:
+  F00:
+    flux_types: ['Gravitational_settling']
+    name: 'detritus'
+    bfmvars: ['R6c', 'R8c']
+    ctrlsrf: 'CtrlSurf_depth_level_600m.nc'
+
+  F01:
+    flux_types: ['Bottom_burial']
+    name: 'detritus'
+    bfmvars: ['R6c', 'R8c']
+    ctrlsrf: 'CtrlSurf_sea_bed.nc'
+
+  F02:
+    flux_types: ['Vertical_advection', 'Vertical_diffusion']
+    name: 'DIC'
+    bfmvars: ['O3c']
+    ctrlsrf: 'CtrlSurf_depth_level_600m.nc'
+
+  F03:
+    flux_types: ['Zonal_advection','Meridional_advection','Horizontal_diffusion_x','Horizontal_diffusion_y']
+    name: 'C_{org}'
+    bfmvars: ['P1c','P2c','P3c','P4c','Z3c','Z4c','Z5c','Z6c','B1c','R1c','R2c','R3c','R1l','R2l','R3l','R6c','R8c']
+    ctrlsrf: 'CtrlSurf_isobath_200m.nc'
+  F04:
+    flux_types: ['Zonal_advection','Meridional_advection','Horizontal_diffusion_x','Horizontal_diffusion_y']
+    name: 'C_{org}'
+    bfmvars: ['P1c','P2c','P3c','P4c','Z3c','Z4c','Z5c','Z6c','B1c','R1c','R2c','R3c','R1l','R2l','R3l','R6c','R8c']
+    ctrlsrf: 'CtrlSurf_arbitrary_transect_cretan_arc.nc'
+
+
