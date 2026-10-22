@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.ticker as ticker
 #import cmcrameri as cmcr
+import cmocean
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from argparse import ArgumentParser
@@ -84,7 +85,10 @@ def load_meshmask(Params):
         tmask = ds['tmask'].values[:]
         lon = ds['glamt'].values[:].squeeze()
         lat = ds['gphit'].values[:].squeeze()
-    return tmask, lon, lat
+        e1t = ds['e1t'].values[:].squeeze()
+        e2t = ds['e2t'].values[:].squeeze()
+        tarea = e1t * e2t
+    return tmask, lon, lat, tarea
 
 def load_bounmask(Params):
     '''
@@ -288,17 +292,21 @@ def get_contourf_levels(Flux_map, nlevels):
     return cmin, cmax, levels
 
 def plot_flux_map(surf_idx, Flux, flx_params, Params):
-    Flux_map = unravel_flux(surf_idx, Flux, Params) / KG_PER_TG
-    tmask, lon, lat = load_meshmask(Params)
+    Flux_map = unravel_flux(surf_idx, Flux, Params)
+    tmask, lon, lat, tarea = load_meshmask(Params)
+    print(f'tarea.shape: {tarea.shape}')
+    Flux_map = Flux_map / tarea # conversion to [mass time^-1 area^-1]
     # get colour range and contourf levels
     nlevels = 10
     cmin, cmax, levels = get_contourf_levels(Flux_map, nlevels)
     cmap = plt.cm.coolwarm
+    #cmap = cmocean.cm.balance
     norm = colors.BoundaryNorm(levels, ncolors=cmap.N, extend='min')
     # plot map
     figwidth, figheight, lbwh, lbwh_cbar = load_map_layout(Params)
     Fig = plt.figure(figsize = (figwidth, figheight))
     ax = Fig.add_axes(lbwh[0, :], projection=ccrs.PlateCarree())
+    #im = ax.contourf(lon, lat, Flux_map, levels=levels, transform=ccrs.PlateCarree(), cmap=cmap, norm=norm, extend='both', zorder=1, alpha=0.7)
     im = ax.contourf(lon, lat, Flux_map, levels=levels, transform=ccrs.PlateCarree(), cmap=cmap, norm=norm, extend='both', zorder=1)
     ax.add_feature(cfeature.LAND.with_scale('50m'), facecolor='white', zorder=2)
     ax.coastlines(resolution='50m', linewidth=0.5, zorder=3)
@@ -306,7 +314,7 @@ def plot_flux_map(surf_idx, Flux, flx_params, Params):
     ax.gridlines(draw_labels=False, linewidth=0.3, alpha=0.5)
     vname = flx_params['name'].replace('_','\ ')
     ctrlsrf = flx_params['ctrlsrf'].replace('CtrlSurf', '').replace('.nc', '').replace('_','\ ')
-    ax.set_title(f'${vname}\ {ctrlsrf}\ [TG\ y^{{-1}}]$', fontsize=12)
+    ax.set_title(f'${vname}\ {ctrlsrf}\ [kg\ y^{{-1}} m^{{-2}}]$', fontsize=12)
     # colorbar
     cax = Fig.add_axes(lbwh_cbar)
     cbar = Fig.colorbar(im, cax=cax, orientation='horizontal', ticks=levels)
@@ -315,6 +323,7 @@ def plot_flux_map(surf_idx, Flux, flx_params, Params):
     cbar.formatter.set_scientific(True)
     cbar.formatter.set_powerlimits((0, 0))
     cbar.update_ticks()
+    cbar.set_ticklabels([f'{t:g}' if i % 2 != 0 else '' for i, t in enumerate(cbar.get_ticks())])
     # save plot
     Outdir = Params['outdir']
     Outfile = f"fluxMap_{flx_params['name']}{flx_params['ctrlsrf'].replace('CtrlSurf', '').replace('.nc', '')}.png"
