@@ -6,6 +6,7 @@ import xarray as xr
 import yaml
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import matplotlib.ticker as ticker
 #import cmcrameri as cmcr
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -17,7 +18,7 @@ KG_PER_TG = 1e9
 
 '''
 computes total fluxes across multiple control surfaces,
-and plots maps of horizontal fluxes,
+and plots maps of vertical fluxes,
 all of this for of user-defined variables (aggregated)
 
 NB: in the model output files each flux is a MEAN RATE,
@@ -74,6 +75,16 @@ def flux_components():
          'Bottom_burial':          {'Type': 7, 'grid': 'W'},
          }
     return C
+
+def load_meshmask(Params):
+    '''
+    load meshmask stuff for plotting
+    '''
+    with xr.open_dataset(Params['meshmask']) as ds:
+        tmask = ds['tmask'].values[:]
+        lon = ds['glamt'].values[:].squeeze()
+        lat = ds['gphit'].values[:].squeeze()
+    return tmask, lon, lat
 
 def load_bounmask(Params):
     '''
@@ -234,8 +245,81 @@ def unravel_flux(surf_idx, Flux, Params):
         Flux_map[curr_j, curr_i] = flx
     return Flux_map
 
-def plot_flux_map(surf_idx, Flux, Params):
-    Flux_map = unravel_flux(surf_idx, Flux, Params)
+def cm2inch(X):
+    X = X * 0.393701
+    return X
+
+def load_map_layout(Params, cm=True):
+    figwidth = Params['LAYOUT']['figwidth']
+    figheight = Params['LAYOUT']['figheight']
+    lbwh = np.array(Params['LAYOUT']['lbwh'], dtype=float)
+    lbwh_cbar = np.array(Params['LAYOUT']['lbwh_cbar'], dtype=float)
+    if cm:
+        figwidth = cm2inch(figwidth)
+        figheight = cm2inch(figheight)
+        lbwh = cm2inch(lbwh)
+        lbwh_cbar = cm2inch(lbwh_cbar)
+    lbwh[:,0] = lbwh[:,0]/figwidth
+    lbwh[:,1] = lbwh[:,1]/figheight
+    lbwh[:,2] = lbwh[:,2]/figwidth
+    lbwh[:,3] = lbwh[:,3]/figheight
+    lbwh_cbar[0] = lbwh_cbar[0]/figwidth
+    lbwh_cbar[1] = lbwh_cbar[1]/figheight
+    lbwh_cbar[2] = lbwh_cbar[2]/figwidth
+    lbwh_cbar[3] = lbwh_cbar[3]/figheight
+    return figwidth, figheight, lbwh, lbwh_cbar
+
+def get_contourf_levels(Flux_map, nlevels):
+    cmax = np.nanpercentile(np.abs(Flux_map), 90)
+    cmin = -cmax
+    raw_step = (cmax - cmin) / nlevels
+    if raw_step > 0 and np.isfinite(raw_step):
+        magnitude = 10 ** np.floor(np.log10(raw_step))
+        normalized_step = raw_step / magnitude
+        # Preferred rounded intervals
+        nice_steps = np.array([1, 2, 2.5, 5, 10])
+        cstep = nice_steps[np.argmin(np.abs(nice_steps - normalized_step))] * magnitude
+    else:
+        cstep = 1.0  # Fallback for zero or invalid ranges
+    # Generate symmetric contour levels
+    levels = np.arange(-np.ceil(cmax / cstep) * cstep,
+                        np.ceil(cmax / cstep) * cstep + cstep * 0.5, 
+                        cstep)
+    return cmin, cmax, levels
+
+def plot_flux_map(surf_idx, Flux, flx_params, Params):
+    Flux_map = unravel_flux(surf_idx, Flux, Params) / KG_PER_TG
+    tmask, lon, lat = load_meshmask(Params)
+    # get colour range and contourf levels
+    nlevels = 10
+    cmin, cmax, levels = get_contourf_levels(Flux_map, nlevels)
+    cmap = plt.cm.coolwarm
+    norm = colors.BoundaryNorm(levels, ncolors=cmap.N, extend='min')
+    # plot map
+    figwidth, figheight, lbwh, lbwh_cbar = load_map_layout(Params)
+    Fig = plt.figure(figsize = (figwidth, figheight))
+    ax = Fig.add_axes(lbwh[0, :], projection=ccrs.PlateCarree())
+    im = ax.contourf(lon, lat, Flux_map, levels=levels, transform=ccrs.PlateCarree(), cmap=cmap, norm=norm, extend='both', zorder=1)
+    ax.add_feature(cfeature.LAND.with_scale('50m'), facecolor='white', zorder=2)
+    ax.coastlines(resolution='50m', linewidth=0.5, zorder=3)
+    ax.set_extent([lon.min(), lon.max(), lat.min(), lat.max()], crs=ccrs.PlateCarree())
+    ax.gridlines(draw_labels=False, linewidth=0.3, alpha=0.5)
+    vname = flx_params['name'].replace('_','\ ')
+    ctrlsrf = flx_params['ctrlsrf'].replace('CtrlSurf', '').replace('.nc', '').replace('_','\ ')
+    ax.set_title(f'${vname}\ {ctrlsrf}\ [TG\ y^{{-1}}]$', fontsize=12)
+    # colorbar
+    cax = Fig.add_axes(lbwh_cbar)
+    cbar = Fig.colorbar(im, cax=cax, orientation='horizontal', ticks=levels)
+    cbar = Fig.colorbar(im, cax=cax, orientation='horizontal', ticks=levels)
+    cbar.formatter = ticker.ScalarFormatter(useMathText=True)
+    cbar.formatter.set_scientific(True)
+    cbar.formatter.set_powerlimits((0, 0))
+    cbar.update_ticks()
+    # save plot
+    Outdir = Params['outdir']
+    Outfile = f"fluxMap_{flx_params['name']}{flx_params['ctrlsrf'].replace('CtrlSurf', '').replace('.nc', '')}.png"
+    print(f"saving: {Outdir}{Outfile}")
+    plt.savefig(Outdir + Outfile)
     return
 
 if __name__ == '__main__':
@@ -254,6 +338,9 @@ if __name__ == '__main__':
         #
         totF = np.sum(Flux) / KG_PER_TG
         print(f"{flx_params['name']} {flx_params['ctrlsrf']} \n {flx_params['flux_types']} \n total: {totF:.4f} Tg y-1")
+        if not flx_params['vertical']:
+            plot_flux_map(surf_idx, Flux, flx_params, Params)
         print('...')
+
 
 

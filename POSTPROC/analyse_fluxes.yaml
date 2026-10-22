@@ -12,7 +12,7 @@ days_per_year: 365.0 # to convert [mg s-1] to [kg y-1]
 # model input
 flxdir: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/FLUXES/' 
 bounmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/bounmask.nc'
-meshnmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/meshmask_025_z125.nc'
+meshmask: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/qDEG_setup/MASK/meshmask_025_z125.nc'
 
 # output
 outdir: '/g100_work/OGS_test2528/ggalli00/EIS_2026_11/PLOTS/'
@@ -31,8 +31,8 @@ LAYOUT:
   figwidth: 13.0
   figheight: 7.4
   lbwh:
-    - [0.3, 1.2, 12.3, 5.2]
-  lbwh_cbar: [0.3, 0.6, 12.3, 0.4]
+    - [0.3, 1.8, 12.3, 5.2]
+  lbwh_cbar: [0.3, 1.2, 12.3, 0.4]
 
 # Flux Types:
 # - 'Zonal_advection': 0,
@@ -50,28 +50,34 @@ FLUXES:
     name: 'detritus'
     bfmvars: ['R6c', 'R8c']
     ctrlsrf: 'CtrlSurf_depth_level_600m.nc'
+    vertical: False
 
   F01:
     flux_types: ['Bottom_burial']
     name: 'detritus'
     bfmvars: ['R6c', 'R8c']
     ctrlsrf: 'CtrlSurf_sea_bed.nc'
+    vertical: False
 
   F02:
     flux_types: ['Vertical_advection', 'Vertical_diffusion']
     name: 'DIC'
     bfmvars: ['O3c']
     ctrlsrf: 'CtrlSurf_depth_level_600m.nc'
+    vertical: False
 
   F03:
     flux_types: ['Zonal_advection','Meridional_advection','Horizontal_diffusion_x','Horizontal_diffusion_y']
     name: 'C_{org}'
     bfmvars: ['P1c','P2c','P3c','P4c','Z3c','Z4c','Z5c','Z6c','B1c','R1c','R2c','R3c','R1l','R2l','R3l','R6c','R8c']
     ctrlsrf: 'CtrlSurf_isobath_200m.nc'
+    vertical: True
+
   F04:
     flux_types: ['Zonal_advection','Meridional_advection','Horizontal_diffusion_x','Horizontal_diffusion_y']
     name: 'C_{org}'
     bfmvars: ['P1c','P2c','P3c','P4c','Z3c','Z4c','Z5c','Z6c','B1c','R1c','R2c','R3c','R1l','R2l','R3l','R6c','R8c']
     ctrlsrf: 'CtrlSurf_arbitrary_transect_cretan_arc.nc'
+    vertical: True
 
 
