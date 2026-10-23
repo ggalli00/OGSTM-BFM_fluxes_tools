@@ -111,6 +111,6 @@ class cell_identifier:
         if not self.is_in_domain(j, i)["T"]:
             raise ValueError(f"T-grid point (j={j}, i={i}) is outside the domain.")
         #
-        return {"lat": float(self.gphit.isel(y=j, x=i).values),
-                "lon": float(self.glamt.isel(y=j, x=i).values)}
+        return {"lon": float(self.glamt.isel(y=j, x=i).values),
+                "lat": float(self.gphit.isel(y=j, x=i).values)}
 
