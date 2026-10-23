@@ -318,7 +318,6 @@ def plot_flux_map(surf_idx, Flux, flx_params, Params):
     # colorbar
     cax = Fig.add_axes(lbwh_cbar)
     cbar = Fig.colorbar(im, cax=cax, orientation='horizontal', ticks=levels)
-    cbar = Fig.colorbar(im, cax=cax, orientation='horizontal', ticks=levels)
     cbar.formatter = ticker.ScalarFormatter(useMathText=True)
     cbar.formatter.set_scientific(True)
     cbar.formatter.set_powerlimits((0, 0))

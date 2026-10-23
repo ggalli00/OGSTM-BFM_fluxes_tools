@@ -23,10 +23,6 @@ year_list: ['2024']
 month_list: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 # general parameters for maps
-CMIN: -100.0
-CMAX: 100.0
-CSTEP: 12.5
-
 LAYOUT:
   figwidth: 13.0
   figheight: 7.4

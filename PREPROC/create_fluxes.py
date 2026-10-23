@@ -14,8 +14,7 @@ The control surface files can be used
 to retrieve specific fluxes from model output.
 
 TODO:
-  - code an arbitrary transect between two arbitrary lat, lon pairs.
-  - code plot zonal and meridional transects
+  - code plot zonal, meridional, arbitrary transects
 
 Usage:
 source /g100_work/OGS23_PRACE_IT/COPERNICUS/sequence.sh
@@ -112,12 +111,14 @@ def apply_lon_cut_contours(contours, Ctx):
     return cut
 
 
-def surface_filename(Surf_Params, ext=".nc"):
-    # output file name of a control surface 
+def surface_filename(Surf_Params, ext=".nc", contour_file=False):
+    # output file name of a control surface or contours if contour_file=True
     # plus the optional user defined "name" to tell apart surfaces of the same type
     surf_type = Surf_Params.get("type")
     name = Surf_Params.get("name")
-    return f"CtrlSurf_{surf_type}_{name}{ext}" if name else f"CtrlSurf_{surf_type}{ext}"
+    fname = f"CtrlSurf_{surf_type}_{name}{ext}" if name else f"CtrlSurf_{surf_type}{ext}"
+    fname = fname.replace('CtrlSurf', 'Contours') if contour_file else fname
+    return fname
 
 
 def dump_fluxes_surf(vals, p_U, p_V, p_W, Ctx, outfile, description, uv_description=None):
@@ -213,7 +214,9 @@ def compute_isobath(idxlist, Ctx, Surf_Params):
     p_i, p_j, grid_type = define_isobath.contours_to_points(contours)
     depthstr = str(int(isobath_depth))
     if Surf_Params.get("save_isobath", False):
-        isobath_outfile = f"{outdir}/" + surface_filename(Surf_Params)
+        # this output is not used currently, 
+        # but keeping it as it may turn out to be useful for some plots and/or analysis later on
+        isobath_outfile = f"{outdir}/" + surface_filename(Surf_Params, contour_file=True)
         define_isobath.write_output(isobath_outfile, contours, isobath["glamu"], isobath["gphiu"], isobath["glamv"], isobath["gphiv"], isobath_depth)
     if Surf_Params.get("plot_isobath", False):
         plot_outfile = f"{outdir}/" + surface_filename(Surf_Params, ".png")
